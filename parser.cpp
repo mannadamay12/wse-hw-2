@@ -194,3 +194,9 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+
+
+
+// parser -- is it correctly parsing the words
+// are the characters not in english being removed?
+// 
