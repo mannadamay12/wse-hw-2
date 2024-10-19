@@ -45,20 +45,20 @@ bool read_next_term(std::ifstream& infile, TermPostings& tp) {
 }
 
 int main(int argc, char* argv[]) {
-    if(argc != 6) {
+    if(argc != 4) {
         std::cerr << "Usage: " << argv[0] << " <intermediate_files...> <final_index> <lexicon_file>" << std::endl;
         return 1;
     }
 
-    std::ofstream final_index(argv[4], std::ios::binary);
+    std::ofstream final_index(argv[2], std::ios::binary);
     if (!final_index) {
-        std::cerr << "Error: Unable to open file for writing: " << argv[4] << std::endl;
+        std::cerr << "Error: Unable to open file for writing: " << argv[2] << std::endl;
         return 1;
     }
 
-    std::ofstream lexicon_file(argv[5]);
+    std::ofstream lexicon_file(argv[3]);
     if (!lexicon_file) {
-        std::cerr << "Error: Unable to open file for writing: " << argv[5] << std::endl;
+        std::cerr << "Error: Unable to open file for writing: " << argv[3] << std::endl;
         return 1;
     }
 
