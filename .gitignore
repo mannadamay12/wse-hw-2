@@ -1,8 +1,10 @@
 .vscode
-*.txt
+output/*.txt
 *.bin
 compute_avgdl
 indexer
 parser
 query_processor
 *.tsv
+check_index
+verify_passage

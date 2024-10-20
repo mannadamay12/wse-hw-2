@@ -1,4 +1,3 @@
-// compute_avgdl.cpp
 #include <iostream>
 #include <fstream>
 #include <string>

@@ -95,7 +95,9 @@ int main(int argc, char* argv[]) {
 
         uint64_t offset = passages_file.tellp();
         // write passage length as a 4-byte unsigned integer
-        uint32_t passage_length = tokens.size(); // Or bytes -----------if needed----------
+//        uint32_t passage_length = tokens.size(); // Or bytes -----------if needed----------
+// Correctly set passage_length to the number of bytes in the passage
+        uint32_t passage_length = static_cast<uint32_t>(passage.size());
 
         passages_file.write(reinterpret_cast<char*>(&passage_length), sizeof(uint32_t));
         passages_file.write(passage.c_str(), passage.size());
