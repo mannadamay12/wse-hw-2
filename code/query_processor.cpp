@@ -1,5 +1,3 @@
-// query_processor.cpp
-
 #include <iostream>
 #include <fstream>
 #include <string>
