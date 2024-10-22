@@ -1,3 +1,4 @@
+// indexer.cpp
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -6,131 +7,175 @@
 #include <utility>
 #include <algorithm>
 #include <cstdint>
-#include "varbyte.h" // Ensure VarByte encoding functions are correctly implemented
+#include <sstream>
+#include <queue>
+#include <functional>
+#include <memory>
+#include <exception>
+#include "varbyte.h"
 
 using namespace std;
 
-// Structure to hold term and its postings
+// Structure to hold a term and its postings
 struct TermPostings {
     string term;
     vector<pair<uint32_t, uint32_t>> postings; // (docID, freq)
 };
 
-// Comparator for sorting terms
-bool compare_terms(const TermPostings& a, const TermPostings& b) {
-    return a.term < b.term;
+// Comparator for priority queue to merge terms lexicographically
+struct TermComparator {
+    bool operator()(const pair<string, size_t>& a, const pair<string, size_t>& b) const {
+        return a.first > b.first; // Min-heap based on term
+    }
+};
+
+// Function to read the next term and its postings from a file
+bool readNextTerm(ifstream& infile, string& term, vector<pair<uint32_t, uint32_t>>& postings) {
+    postings.clear();
+    string line;
+    if (!getline(infile, line)) {
+        return false; // End of file
+    }
+
+    istringstream iss(line);
+    if (!(iss >> term)) {
+        cerr << "Invalid line format in intermediate file: " << line << endl;
+        return false; // Invalid line
+    }
+
+    uint32_t doc_id, freq;
+    while (iss >> doc_id >> freq) {
+        postings.emplace_back(doc_id, freq);
+    }
+
+    if (postings.empty()) {
+        cerr << "No postings found for term '" << term << "' in line: " << line << endl;
+        return false;
+    }
+
+    return true;
 }
 
 int main(int argc, char* argv[]) {
-    if(argc < 4) {
-        cerr << "Usage: " << argv[0] << " <intermediate_file> <final_index> <lexicon_file>" << endl;
+    if (argc < 4) {
+        cerr << "Usage: " << argv[0] << " <intermediate_file1> [<intermediate_file2> ...] <final_index> <lexicon_file>" << endl;
         return 1;
     }
 
-    string intermediate_file = argv[1];
-    string final_index_file = argv[2];
-    string lexicon_file = argv[3];
+    // Last two arguments are the final index and lexicon files
+    string final_index_file = argv[argc - 2];
+    string lexicon_file = argv[argc - 1];
 
-    // Read all term postings
-    vector<TermPostings> all_terms;
-    ifstream infile(intermediate_file);
-    if(!infile.is_open()) {
-        cerr << "Failed to open intermediate file: " << intermediate_file << endl;
-        return 1;
+    // Open intermediate files
+    size_t num_files = argc - 3;
+    vector<ifstream> intermediate_files(num_files);
+    for (size_t i = 0; i < num_files; ++i) {
+        intermediate_files[i].open(argv[i + 1]);
+        if (!intermediate_files[i].is_open()) {
+            cerr << "Failed to open intermediate file: " << argv[i + 1] << endl;
+            return 1;
+        }
     }
 
-    string line;
-    while(getline(infile, line)) {
-        if(line.empty()) continue;
+    // Initialize the priority queue with the first term from each file
+    priority_queue<pair<string, size_t>, vector<pair<string, size_t>>, TermComparator> min_heap;
+    vector<string> current_terms(num_files);
+    vector<vector<pair<uint32_t, uint32_t>>> current_postings(num_files);
 
-        size_t pos = line.find('\t');
-        if(pos == string::npos) continue;
-
-        TermPostings tp;
-        tp.term = line.substr(0, pos);
-
-        size_t current = pos + 1;
-        while(current < line.size()) {
-            size_t next_tab = line.find('\t', current);
-            if(next_tab == string::npos) break;
-            string doc_id_str = line.substr(current, next_tab - current);
-            current = next_tab + 1;
-            next_tab = line.find('\t', current);
-            if(next_tab == string::npos) {
-                break;
-            }
-            string freq_str = line.substr(current, next_tab - current);
-            current = next_tab + 1;
-
-            uint32_t doc_id = stoi(doc_id_str);
-            uint32_t freq = stoi(freq_str);
-            tp.postings.emplace_back(doc_id, freq);
+    for (size_t i = 0; i < num_files; ++i) {
+        if (readNextTerm(intermediate_files[i], current_terms[i], current_postings[i])) {
+            min_heap.emplace(current_terms[i], i);
         }
-
-        // Handle last freq if any
-        size_t last_tab = line.rfind('\t');
-        if(last_tab != string::npos && last_tab + 1 < line.size()) {
-            string freq_str = line.substr(last_tab + 1);
-            uint32_t freq = stoi(freq_str);
-            // To correctly associate the last docID, we need to parse it from before the last tab
-            size_t second_last_tab = line.rfind('\t', last_tab - 1);
-            if(second_last_tab != string::npos) {
-                string doc_id_str = line.substr(second_last_tab + 1, last_tab - second_last_tab - 1);
-                uint32_t doc_id = stoi(doc_id_str);
-                tp.postings.emplace_back(doc_id, freq);
-            }
-        }
-
-        all_terms.push_back(tp);
     }
-    infile.close();
 
-    // Sort all_terms lexicographically
-    sort(all_terms.begin(), all_terms.end(), compare_terms);
-
-    // Open final_index and lexicon files
+    // Open final index and lexicon files
     ofstream final_index(final_index_file, ios::binary);
-    if(!final_index.is_open()) {
+    if (!final_index.is_open()) {
         cerr << "Failed to create final index file: " << final_index_file << endl;
         return 1;
     }
 
     ofstream lexicon(lexicon_file);
-    if(!lexicon.is_open()) {
+    if (!lexicon.is_open()) {
         cerr << "Failed to create lexicon file: " << lexicon_file << endl;
         return 1;
     }
 
     uint64_t current_offset = 0;
 
-    for(auto& term_postings : all_terms) {
-        // Separate docIDs and freqs
-        vector<uint32_t> doc_ids;
-        vector<uint32_t> freqs;
-        for(auto& [doc_id, freq] : term_postings.postings) {
-            doc_ids.push_back(doc_id);
-            freqs.push_back(freq);
+    while (!min_heap.empty()) {
+        // Get the smallest term
+        auto [term, file_idx] = min_heap.top();
+        min_heap.pop();
+
+        // Collect postings for this term from all files
+        vector<pair<uint32_t, uint32_t>> merged_postings = move(current_postings[file_idx]);
+
+        // Read the next term from the same file
+        if (readNextTerm(intermediate_files[file_idx], current_terms[file_idx], current_postings[file_idx])) {
+            min_heap.emplace(current_terms[file_idx], file_idx);
         }
 
-        // Apply VarByte encoding
-        vector<uint8_t> encoded_docids = encodeVarByte(doc_ids);
-        vector<uint8_t> encoded_freqs = encodeVarByte(freqs);
+        // Collect postings from other files that have the same term
+        while (!min_heap.empty() && min_heap.top().first == term) {
+            auto [_, idx] = min_heap.top();
+            min_heap.pop();
 
-        // Write to final_index.bin
-        final_index.write(reinterpret_cast<char*>(encoded_docids.data()), encoded_docids.size());
-        final_index.write(reinterpret_cast<char*>(encoded_freqs.data()), encoded_freqs.size());
+            // Merge postings
+            merged_postings.insert(merged_postings.end(), current_postings[idx].begin(), current_postings[idx].end());
 
-        uint64_t freq_offset = current_offset + encoded_docids.size();
+            // Read the next term from this file
+            if (readNextTerm(intermediate_files[idx], current_terms[idx], current_postings[idx])) {
+                min_heap.emplace(current_terms[idx], idx);
+            }
+        }
 
-        // Write to lexicon.txt
-        lexicon << term_postings.term << "\t" << current_offset << "\t" << encoded_docids.size() << "\t" << freq_offset << "\t" << encoded_freqs.size() << "\n";
+        // Sort merged postings by docID
+        sort(merged_postings.begin(), merged_postings.end());
 
-        // Update current_offset
-        current_offset += encoded_docids.size() + encoded_freqs.size();
+        // Gap encode docIDs
+        vector<uint32_t> doc_gaps;
+        vector<uint32_t> freqs;
+        uint32_t prev_doc_id = 0;
+        for (const auto& [doc_id, freq] : merged_postings) {
+            uint32_t gap = doc_id - prev_doc_id;
+            doc_gaps.push_back(gap);
+            freqs.push_back(freq);
+            prev_doc_id = doc_id;
+        }
+
+        try {
+            // Encode docIDs and frequencies using VarByte encoding
+            vector<uint8_t> encoded_docids;
+            encodeVarByteList(doc_gaps, encoded_docids);
+
+            vector<uint8_t> encoded_freqs;
+            encodeVarByteList(freqs, encoded_freqs);
+
+            // Write encoded postings to the final index file
+            final_index.write(reinterpret_cast<char*>(encoded_docids.data()), encoded_docids.size());
+            final_index.write(reinterpret_cast<char*>(encoded_freqs.data()), encoded_freqs.size());
+
+            // Write term information to the lexicon
+            uint64_t freq_offset = current_offset + encoded_docids.size();
+            lexicon << term << "\t" << current_offset << "\t" << encoded_docids.size() << "\t"
+                    << freq_offset << "\t" << encoded_freqs.size() << "\t" << merged_postings.size() << "\n";
+
+            // Update the current offset
+            current_offset += encoded_docids.size() + encoded_freqs.size();
+        } catch (const std::runtime_error& e) {
+            cerr << "Encoding error for term '" << term << "': " << e.what() << endl;
+            // Optionally, skip this term or handle the error as needed
+            continue;
+        }
     }
 
+    // Close all files
     final_index.close();
     lexicon.close();
+    for (auto& infile : intermediate_files) {
+        infile.close();
+    }
 
     cout << "Indexing completed. Final inverted index and lexicon are created." << endl;
 

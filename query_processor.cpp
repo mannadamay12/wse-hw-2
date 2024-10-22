@@ -1,3 +1,5 @@
+// query_processor.cpp
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -8,7 +10,14 @@
 #include <sstream>
 #include <cmath>
 #include <limits>
-#include <cassert>
+#include <iomanip>
+#include <set>
+#include <chrono>
+#ifdef __linux__
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 #include "varbyte.h"
 #include "tokenizer.h"
 
@@ -18,6 +27,7 @@ struct LexiconEntry {
     size_t docid_length;
     uint64_t freq_offset;
     size_t freq_length;
+    size_t doc_freq; // Number of documents containing the term
 };
 
 // Structure for Document Information
@@ -41,13 +51,14 @@ bool load_lexicon(const std::string& lexicon_file, std::unordered_map<std::strin
 
     std::string term;
     uint64_t docid_offset, freq_offset;
-    size_t docid_length, freq_length;
-    while(infile >> term >> docid_offset >> docid_length >> freq_offset >> freq_length) {
+    size_t docid_length, freq_length, doc_freq;
+    while(infile >> term >> docid_offset >> docid_length >> freq_offset >> freq_length >> doc_freq) {
         LexiconEntry entry;
         entry.docid_offset = docid_offset;
         entry.docid_length = docid_length;
         entry.freq_offset = freq_offset;
         entry.freq_length = freq_length;
+        entry.doc_freq = doc_freq;
         lexicon[term] = entry;
     }
 
@@ -99,6 +110,58 @@ bool load_page_table(const std::string& page_table_file, std::unordered_map<uint
 double calculate_idf(uint32_t total_docs, uint32_t doc_freq) {
     return log((static_cast<double>(total_docs) - doc_freq + 0.5) / (doc_freq + 0.5) + 1);
 }
+
+#ifdef __linux__
+// Function to get total CPU time (user + system) in clock ticks
+long get_total_cpu_time() {
+    std::ifstream stat_file("/proc/stat");
+    if(!stat_file.is_open()) {
+        std::cerr << "Error: Unable to open /proc/stat for CPU time." << std::endl;
+        return 0;
+    }
+    std::string cpu_label;
+    long user, nice, system, idle, iowait, irq, softirq, steal;
+    stat_file >> cpu_label >> user >> nice >> system >> idle >> iowait >> irq >> softirq >> steal;
+    stat_file.close();
+    return user + nice + system + irq + softirq + steal;
+}
+
+// Function to get process CPU time (user + system) in clock ticks
+long get_process_cpu_time() {
+    std::ifstream proc_stat("/proc/self/stat");
+    if(!proc_stat.is_open()) {
+        std::cerr << "Error: Unable to open /proc/self/stat for process CPU time." << std::endl;
+        return 0;
+    }
+    std::string ignore;
+    long utime, stime;
+    for(int i = 0; i < 13; ++i) proc_stat >> ignore; // Skip first 13 fields
+    proc_stat >> utime >> stime;
+    proc_stat.close();
+    return utime + stime;
+}
+
+// Function to get current memory usage in KB
+long get_memory_usage_kb() {
+    std::ifstream status_file("/proc/self/status");
+    if(!status_file.is_open()) {
+        std::cerr << "Error: Unable to open /proc/self/status for memory usage." << std::endl;
+        return 0;
+    }
+    std::string line;
+    long vmrss = 0;
+    while (std::getline(status_file, line)) {
+        if(line.find("VmRSS:") == 0) {
+            std::istringstream iss(line);
+            std::string label;
+            iss >> label >> vmrss; // Label and value
+            break;
+        }
+    }
+    status_file.close();
+    return vmrss; // in KB
+}
+#endif
 
 int main(int argc, char* argv[]) {
     // Usage:
@@ -169,10 +232,29 @@ int main(int argc, char* argv[]) {
     // Query processing loop
     std::string query;
     while(true) {
+        // Select query mode
+        int mode = 0;
+        while (mode != 1 && mode != 2) {
+            std::cout << "Select query mode (1 for conjunctive, 2 for disjunctive): ";
+            std::cin >> mode;
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Clear input buffer
+            if (mode != 1 && mode != 2) {
+                std::cout << "Invalid mode selected. Please enter 1 or 2." << std::endl;
+            }
+        }
+
         std::cout << "Enter query (or type 'exit' to quit): ";
         std::getline(std::cin, query);
         if(query == "exit") break;
         if(query.empty()) continue;
+
+#ifdef __linux__
+        long total_cpu_start = get_total_cpu_time();
+        long process_cpu_start = get_process_cpu_time();
+        long memory_start = get_memory_usage_kb();
+#endif
+
+        auto query_start_time = std::chrono::high_resolution_clock::now(); // Start timing
 
         // Tokenize query
         std::vector<std::string> terms = tokenize(query);
@@ -184,11 +266,37 @@ int main(int argc, char* argv[]) {
 
         if(terms.empty()) {
             std::cout << "No valid terms in query." << std::endl;
+#ifdef __linux__
+            long total_cpu_end = get_total_cpu_time();
+            long process_cpu_end = get_process_cpu_time();
+            long memory_end = get_memory_usage_kb();
+
+            long total_cpu_diff = total_cpu_end - total_cpu_start;
+            long process_cpu_diff = process_cpu_end - process_cpu_start;
+            long memory_diff = memory_end - memory_start;
+
+            // Get clock ticks per second
+            long ticks_per_sec = sysconf(_SC_CLK_TCK);
+
+            double cpu_usage = (total_cpu_diff > 0) ? (static_cast<double>(process_cpu_diff) / static_cast<double>(total_cpu_diff)) * 100.0 : 0.0;
+
+            // Calculate elapsed time
+            auto query_end_time_now = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> elapsed = query_end_time_now - query_start_time;
+
+            // Display metrics
+            std::cout << "Elapsed Time: " << elapsed.count() << " seconds." << std::endl;
+            std::cout << "CPU Usage: " << cpu_usage << " %" << std::endl;
+            std::cout << "Memory Usage Change: " << memory_diff << " KB." << std::endl;
+#endif
+            std::cout << std::endl;
             continue;
         }
 
         // Retrieve postings for each term
-        std::unordered_map<uint32_t, double> doc_scores; // docID -> BM25 score
+        std::unordered_map<std::string, std::vector<uint32_t>> term_doc_ids; // term -> list of docIDs
+        std::unordered_map<std::string, std::vector<uint32_t>> term_freqs;   // term -> list of frequencies
+        std::unordered_map<std::string, size_t> term_positions;              // term -> current position in postings
 
         for(const auto& term : terms) {
             auto it = lexicon.find(term);
@@ -203,19 +311,47 @@ int main(int argc, char* argv[]) {
             // Read encoded docIDs
             std::vector<uint8_t> encoded_docids(entry.docid_length);
             index_file.seekg(entry.docid_offset, std::ios::beg);
-            index_file.read(reinterpret_cast<char*>(encoded_docids.data()), entry.docid_length);
+            if(!index_file.read(reinterpret_cast<char*>(encoded_docids.data()), entry.docid_length)) {
+                std::cerr << "Error: Failed to read docIDs for term '" << term << "'." << std::endl;
+                continue;
+            }
 
             // Read encoded frequencies
             std::vector<uint8_t> encoded_freqs(entry.freq_length);
             index_file.seekg(entry.freq_offset, std::ios::beg);
-            index_file.read(reinterpret_cast<char*>(encoded_freqs.data()), entry.freq_length);
+            if(!index_file.read(reinterpret_cast<char*>(encoded_freqs.data()), entry.freq_length)) {
+                std::cerr << "Error: Failed to read frequencies for term '" << term << "'." << std::endl;
+                continue;
+            }
 
-            // Decode docIDs and frequencies
+            // Decode docIDs (gap decoding) and frequencies
             size_t index_pos = 0;
-            std::vector<uint32_t> doc_ids = decodeVarByteList(encoded_docids, index_pos);
+            std::vector<uint32_t> doc_id_gaps;
+            try {
+                doc_id_gaps = decodeVarByteList(encoded_docids, index_pos, entry.doc_freq);
+            } catch(const std::runtime_error& e) {
+                std::cerr << "Decoding error for docIDs of term '" << term << "': " << e.what() << std::endl;
+                continue;
+            }
+
+            // Reconstruct original docIDs from gaps
+            std::vector<uint32_t> doc_ids;
+            doc_ids.reserve(doc_id_gaps.size());
+            uint32_t prev_doc_id = 0;
+            for (uint32_t gap : doc_id_gaps) {
+                uint32_t doc_id = prev_doc_id + gap;
+                doc_ids.push_back(doc_id);
+                prev_doc_id = doc_id;
+            }
 
             index_pos = 0;
-            std::vector<uint32_t> freqs = decodeVarByteList(encoded_freqs, index_pos);
+            std::vector<uint32_t> freqs;
+            try {
+                freqs = decodeVarByteList(encoded_freqs, index_pos, entry.doc_freq);
+            } catch(const std::runtime_error& e) {
+                std::cerr << "Decoding error for frequencies of term '" << term << "': " << e.what() << std::endl;
+                continue;
+            }
 
             // Ensure doc_ids and freqs are the same size
             if(doc_ids.size() != freqs.size()) {
@@ -223,48 +359,101 @@ int main(int argc, char* argv[]) {
                 continue;
             }
 
-            // Debugging: Print term and document frequency
-            std::cout << "Term: '" << term << "' | Document Frequency: " << doc_ids.size() << std::endl;
+            term_doc_ids[term] = doc_ids;
+            term_freqs[term] = freqs;
+            term_positions[term] = 0;
+        }
 
-            // Calculate IDF
-            uint32_t doc_freq = doc_ids.size();
-            double idf = calculate_idf(total_docs, doc_freq);
-            std::cout << "IDF for term '" << term << "': " << idf << std::endl;
+        // Capture the end time immediately after retrieving postings
+        auto query_end_time_now = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = query_end_time_now - query_start_time;
 
-            for(size_t i = 0; i < doc_ids.size(); ++i) {
-                uint32_t docID = doc_ids[i];
-                uint32_t freq = freqs[i];
+#ifdef __linux__
+        // Measure CPU and memory usage after retrieving postings
+        long total_cpu_end = get_total_cpu_time();
+        long process_cpu_end = get_process_cpu_time();
+        long memory_end = get_memory_usage_kb();
 
-                // Retrieve document length
-                auto len_it = doc_lengths.find(docID);
-                if(len_it == doc_lengths.end()) {
-                    std::cerr << "Warning: Document length not found for docID: " << docID << std::endl;
+        long total_cpu_diff = total_cpu_end - total_cpu_start;
+        long process_cpu_diff = process_cpu_end - process_cpu_start;
+        long memory_diff = memory_end - memory_start;
+
+        // Calculate CPU usage percentage
+        double cpu_usage = (total_cpu_diff > 0) ? (static_cast<double>(process_cpu_diff) / static_cast<double>(total_cpu_diff)) * 100.0 : 0.0;
+#endif
+
+        // Check if any terms have postings
+        if(term_doc_ids.empty()) {
+            std::cout << "No matching documents found." << std::endl;
+#ifdef __linux__
+            // Display performance metrics even if no results
+            std::cout << "Elapsed Time: " << elapsed.count() << " seconds." << std::endl;
+            std::cout << "CPU Usage: " << cpu_usage << " %" << std::endl;
+            std::cout << "Memory Usage Change: " << memory_diff << " KB." << std::endl;
+#endif
+            std::cout << std::endl;
+            continue;
+        }
+
+        // Initialize data structures for DAAT processing
+        std::unordered_map<uint32_t, double> doc_scores; // docID -> BM25 score
+
+        // Collect all unique docIDs across all terms
+        std::set<uint32_t> all_doc_ids;
+        for (const auto& [term, doc_ids] : term_doc_ids) {
+            all_doc_ids.insert(doc_ids.begin(), doc_ids.end());
+        }
+
+        // Process documents in order
+        for(auto doc_id_iter = all_doc_ids.begin(); doc_id_iter != all_doc_ids.end(); ++doc_id_iter) {
+            uint32_t current_doc_id = *doc_id_iter;
+            double score = 0.0;
+            int found_terms = 0;
+
+            for (const auto& term : terms) {
+                // Skip terms not found in lexicon
+                if (term_doc_ids.find(term) == term_doc_ids.end()) {
                     continue;
                 }
-                uint32_t doc_length = len_it->second;
-                std::cout << "DocID: " << docID << " | Freq: " << freq << " | Doc Length: " << doc_length << std::endl;
 
-                // Prevent division by zero
-                assert(avgdl > 0 && "Average Document Length (avgdl) must be greater than zero.");
+                auto& doc_ids = term_doc_ids[term];
+                auto& freqs = term_freqs[term];
+                auto& pos = term_positions[term];
 
-                // Compute BM25 score
-                double denominator = static_cast<double>(freq) + k1 * (1 - b + b * (static_cast<double>(doc_length) / avgdl));
-                double numerator = static_cast<double>(freq) * (k1 + 1);
-                double bm25_component = (denominator != 0) ? (numerator / denominator) : 0.0;
-                double score = idf * bm25_component;
+                // Move the pointer forward if necessary
+                while (pos < doc_ids.size() && doc_ids[pos] < current_doc_id) {
+                    pos++;
+                }
 
-                // Debugging: Print BM25 components
-                std::cout << "BM25 Calculation for DocID: " << docID << std::endl;
-                std::cout << "  Freq: " << freq << std::endl;
-                std::cout << "  Doc Length: " << doc_length << std::endl;
-                std::cout << "  Numerator: " << numerator << std::endl;
-                std::cout << "  Denominator: " << denominator << std::endl;
-                std::cout << "  BM25 Component: " << bm25_component << std::endl;
-                std::cout << "  Score: " << score << std::endl;
+                if (pos < doc_ids.size() && doc_ids[pos] == current_doc_id) {
+                    found_terms++;
 
-                // Accumulate score
-                doc_scores[docID] += score;
-                std::cout << "Accumulated Score for DocID: " << docID << " | Total Score: " << doc_scores[docID] << std::endl;
+                    // Retrieve frequency
+                    uint32_t freq = freqs[pos];
+
+                    // Retrieve document length
+                    auto len_it = doc_lengths.find(current_doc_id);
+                    if(len_it == doc_lengths.end()) {
+                        std::cerr << "Warning: Document length not found for docID: " << current_doc_id << std::endl;
+                        continue;
+                    }
+                    uint32_t doc_length = len_it->second;
+
+                    // Compute BM25 score for this term
+                    LexiconEntry entry = lexicon[term];
+                    double idf = calculate_idf(total_docs, entry.doc_freq);
+                    double denominator = freq + k1 * (1 - b + b * (static_cast<double>(doc_length) / avgdl));
+                    double numerator = freq * (k1 + 1);
+                    double bm25_component = (denominator != 0) ? (numerator / denominator) : 0.0;
+                    double term_score = idf * bm25_component;
+
+                    score += term_score;
+                }
+            }
+
+            // Apply query mode filtering
+            if ((mode == 1 && found_terms == terms.size()) || (mode == 2 && found_terms > 0)) {
+                doc_scores[current_doc_id] = score;
             }
         }
 
@@ -285,7 +474,7 @@ int main(int argc, char* argv[]) {
             // Retrieve passage from passages.bin using page_table
             auto it = page_table.find(docID);
             if(it == page_table.end()) {
-                std::cout << i+1 << ". DocID: " << docID << " | Score: " << score << " | Passage: [Not Found]" << std::endl;
+                std::cout << i+1 << ". DocID: " << docID << " | Score: " << std::fixed << std::setprecision(4) << score << " | Passage: [Not Found]" << std::endl;
                 continue;
             }
 
@@ -294,34 +483,61 @@ int main(int argc, char* argv[]) {
 
             // Seek to the passage in passages.bin
             passages_file.seekg(offset, std::ios::beg);
+            if(passages_file.fail()) {
+                std::cerr << "Error: Failed to seek to passage for docID: " << docID << std::endl;
+                std::cout << i+1 << ". DocID: " << docID << " | Score: " << std::fixed << std::setprecision(4) << score << " | Passage: [Seek Failed]" << std::endl;
+                continue;
+            }
 
             // Read passage length (first 4 bytes as uint32_t)
             uint32_t passage_length;
             passages_file.read(reinterpret_cast<char*>(&passage_length), sizeof(uint32_t));
+            if(passages_file.fail()) {
+                std::cerr << "Error: Failed to read passage length for docID: " << docID << std::endl;
+                std::cout << i+1 << ". DocID: " << docID << " | Score: " << std::fixed << std::setprecision(4) << score << " | Passage: [Read Failed]" << std::endl;
+                continue;
+            }
 
             // Validate passage_length
             if(passage_length == 0 || passage_length > length) {
                 std::cerr << "Warning: Invalid passage length for docID: " << docID << std::endl;
-                std::cout << i+1 << ". DocID: " << docID << " | Score: " << score << " | Passage: [Invalid Length]" << std::endl;
+                std::cout << i+1 << ". DocID: " << docID << " | Score: " << std::fixed << std::setprecision(4) << score << " | Passage: [Invalid Length]" << std::endl;
                 continue;
             }
 
             // Read passage characters based on byte length
             std::vector<char> passage_chars(passage_length);
             passages_file.read(reinterpret_cast<char*>(passage_chars.data()), passage_length);
+            if(passages_file.fail()) {
+                std::cerr << "Error: Failed to read passage content for docID: " << docID << std::endl;
+                std::cout << i+1 << ". DocID: " << docID << " | Score: " << std::fixed << std::setprecision(4) << score << " | Passage: [Content Read Failed]" << std::endl;
+                continue;
+            }
             std::string passage(passage_chars.begin(), passage_chars.end());
 
-            std::cout << i+1 << ". DocID: " << docID << " | Score: " << score << " | Passage: " << passage << std::endl;
+            // Output formatting
+            std::cout << std::fixed << std::setprecision(4);
+            std::cout << i+1 << ". DocID: " << docID << " | Score: " << score << "\nPassage: " << passage << "\n" << std::endl;
         }
 
         if(ranked_docs.empty()) {
             std::cout << "No matching documents found." << std::endl;
         }
 
+        // Display performance metrics
+#ifdef __linux__
+        std::cout << "Elapsed Time: " << elapsed.count() << " seconds." << std::endl;
+        std::cout << "CPU Usage: " << cpu_usage << " %" << std::endl;
+        std::cout << "Memory Usage Change: " << memory_diff << " KB." << std::endl;
+#endif
+
+        std::cout << std::endl;
+
         // Reset the stream state for the next query
         index_file.clear();
     }
-        // Close files before exiting
+
+    // Close files before exiting
     index_file.close();
     passages_file.close();
 

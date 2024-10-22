@@ -8,3 +8,4 @@ query_processor
 *.tsv
 check_index
 verify_passage
+test

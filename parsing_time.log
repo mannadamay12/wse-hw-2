@@ -1,0 +1,7 @@
+Written intermediate file: output//intermediate_1.txt
+Written intermediate file: output//intermediate_2.txt
+Written intermediate file: output//intermediate_3.txt
+Parsing and posting generation completed.
+Total Tokens: 494014171
+Written total_tokens.txt
+./parser collection/collection.tsv output/  694.41s user 98.54s system 99% cpu 13:20.83 total

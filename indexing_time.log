@@ -1,0 +1,2 @@
+Indexing completed. Final inverted index and lexicon are created.
+./indexer output/intermediate_1.txt output/intermediate_2.txt     107.50s user 18.81s system 92% cpu 2:16.22 total
