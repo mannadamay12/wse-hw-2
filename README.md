@@ -28,7 +28,6 @@ To compiler cpp files `g++ -std=c++17 -O2 -o <executable name> src/<cpp file>.cp
 
 3. parser.cpp
     - Parses the raw MS MARCO dataset and creates sorted intermediate index posting.
-    - To compiler parser.cpp `g++ -std=c++17 -O2 -o parser parser.cpp`
     - `./parser collection.tsv output/`
     - The parser will create 1 GB capped files named as intermediate_1.txt etc.
     - Ensure that the output directory exists before running the parser.
@@ -37,7 +36,8 @@ To compiler cpp files `g++ -std=c++17 -O2 -o <executable name> src/<cpp file>.cp
     - Merges sorted intermediate postings into a final compressed inverted index.
     
     ```
-    ./indexer output/intermediate_1.txt output/intermediate_2.txt output/intermediate_3.txt output/final_index.bin output/lexicon.txt
+    ./indexer output/intermediate_1.txt output/intermediate_2.txt
+    output/intermediate_3.txt output/final_index.bin output/lexicon.txt
     ```
 
 5. compute_avgdl.cpp
@@ -51,7 +51,8 @@ To compiler cpp files `g++ -std=c++17 -O2 -o <executable name> src/<cpp file>.cp
     - Processes user queries, retrieves and ranks relevant documents using the BM25 algorithm, and displays the top-10 results with corresponding passages.
 
     ```
-    ./query_processor output/final_index.bin output/lexicon.txt output/page_table.txt output/passages.bin output/doc_lengths.txt output/avgdl.txt
+    ./query_processor output/final_index.bin output/lexicon.txt output/page_table.txt
+    output/passages.bin output/doc_lengths.txt output/avgdl.txt
     ```
 
 7. logs/*
