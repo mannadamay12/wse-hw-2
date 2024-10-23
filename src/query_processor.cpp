@@ -16,8 +16,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
-#include "varbyte.h"
-#include "tokenizer.h"
+
+#include "/root/wse/wse-hw-2/include/varbyte.h"
+#include "/root/wse/wse-hw-2/include/tokenizer.h"
 
 // Structure for Lexicon Entry
 struct LexiconEntry {
@@ -162,8 +163,6 @@ long get_memory_usage_kb() {
 #endif
 
 int main(int argc, char* argv[]) {
-    // Usage:
-    // ./query_processor <final_index.bin> <lexicon.txt> <page_table.txt> <passages.bin> <doc_lengths.txt> <avgdl.txt>
     if(argc < 7) {
         std::cerr << "Usage: " << argv[0] << " <final_index.bin> <lexicon.txt> <page_table.txt> <passages.bin> <doc_lengths.txt> <avgdl.txt>" << std::endl;
         return 1;
@@ -273,16 +272,13 @@ int main(int argc, char* argv[]) {
             long process_cpu_diff = process_cpu_end - process_cpu_start;
             long memory_diff = memory_end - memory_start;
 
-            // Get clock ticks per second
             long ticks_per_sec = sysconf(_SC_CLK_TCK);
 
             double cpu_usage = (total_cpu_diff > 0) ? (static_cast<double>(process_cpu_diff) / static_cast<double>(total_cpu_diff)) * 100.0 : 0.0;
 
-            // Calculate elapsed time
             auto query_end_time_now = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = query_end_time_now - query_start_time;
 
-            // Display metrics
             std::cout << "Elapsed Time: " << elapsed.count() << " seconds." << std::endl;
             std::cout << "CPU Usage: " << cpu_usage << " %" << std::endl;
             std::cout << "Memory Usage Change: " << memory_diff << " KB." << std::endl;
@@ -376,7 +372,6 @@ int main(int argc, char* argv[]) {
         long process_cpu_diff = process_cpu_end - process_cpu_start;
         long memory_diff = memory_end - memory_start;
 
-        // Calculate CPU usage percentage
         double cpu_usage = (total_cpu_diff > 0) ? (static_cast<double>(process_cpu_diff) / static_cast<double>(total_cpu_diff)) * 100.0 : 0.0;
 #endif
 
@@ -384,7 +379,6 @@ int main(int argc, char* argv[]) {
         if(term_doc_ids.empty()) {
             std::cout << "No matching documents found." << std::endl;
 #ifdef __linux__
-            // Display performance metrics even if no results
             std::cout << "Elapsed Time: " << elapsed.count() << " seconds." << std::endl;
             std::cout << "CPU Usage: " << cpu_usage << " %" << std::endl;
             std::cout << "Memory Usage Change: " << memory_diff << " KB." << std::endl;
@@ -409,7 +403,6 @@ int main(int argc, char* argv[]) {
             int found_terms = 0;
 
             for (const auto& term : terms) {
-                // Skip terms not found in lexicon
                 if (term_doc_ids.find(term) == term_doc_ids.end()) {
                     continue;
                 }
@@ -449,7 +442,6 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            // Apply query mode filtering
             if ((mode == 1 && found_terms == terms.size()) || (mode == 2 && found_terms > 0)) {
                 doc_scores[current_doc_id] = score;
             }
@@ -522,8 +514,8 @@ int main(int argc, char* argv[]) {
             std::cout << "No matching documents found." << std::endl;
         }
 
-        // Display performance metrics
 #ifdef __linux__
+        // Display performance metrics
         std::cout << "Elapsed Time: " << elapsed.count() << " seconds." << std::endl;
         std::cout << "CPU Usage: " << cpu_usage << " %" << std::endl;
         std::cout << "Memory Usage Change: " << memory_diff << " KB." << std::endl;
