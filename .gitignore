@@ -13,3 +13,4 @@ test
 *.faiss
 *.json
 /hw3_env
+*.DS_Store
