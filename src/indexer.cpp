@@ -11,7 +11,8 @@
 #include <functional>
 #include <memory>
 #include <exception>
-#include "/root/wse/wse-hw-2/include/varbyte.h"
+#include "/Users/ad12/Documents/Develop/wse-hw-2/include/varbyte.h"
+
 
 using namespace std;
 
@@ -108,7 +109,7 @@ int main(int argc, char* argv[]) {
         min_heap.pop();
 
         // Collect postings for this term from all files
-        vector<pair<uint32_t, uint32_t>> merged_postings = move(current_postings[file_idx]);
+        vector<pair<uint32_t, uint32_t>> merged_postings = std::move(current_postings[file_idx]);
 
         // Read the next term from the same file
         if (readNextTerm(intermediate_files[file_idx], current_terms[file_idx], current_postings[file_idx])) {

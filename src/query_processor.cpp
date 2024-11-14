@@ -17,8 +17,8 @@
 #include <unistd.h>
 #endif
 
-#include "/root/wse/wse-hw-2/include/varbyte.h"
-#include "/root/wse/wse-hw-2/include/tokenizer.h"
+#include "/Users/ad12/Documents/Develop/wse-hw-2/include/varbyte.h"
+#include "/Users/ad12/Documents/Develop/wse-hw-2/include/tokenizer.h"
 
 // Structure for Lexicon Entry
 struct LexiconEntry {

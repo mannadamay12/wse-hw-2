@@ -1,0 +1,17 @@
+2024-11-13 23:37:42,251 - INFO - Loaded 1000 queries from data/qrels.dev.tsv
+2024-11-13 23:37:42,254 - INFO - Loaded 43 queries from data/qrels.eval.one.tsv
+2024-11-13 23:37:42,259 - INFO - Loaded 54 queries from data/qrels.eval.two.tsv
+2024-11-13 23:37:42,314 - INFO - Evaluator initialized successfully
+2024-11-13 23:37:42,314 - INFO - Loaded 1000 queries for dev
+2024-11-13 23:37:42,314 - INFO - Loaded 43 queries for eval_one
+2024-11-13 23:37:42,314 - INFO - Loaded 54 queries for eval_two
+2024-11-13 23:37:42,324 - INFO - Processing query 1/202185: 1048795 - 'cost of combigan generic'
+2024-11-13 23:42:21,562 - INFO - Loaded 1000 queries from data/qrels.dev.tsv
+2024-11-13 23:42:21,566 - INFO - Loaded 43 queries from data/qrels.eval.one.tsv
+2024-11-13 23:42:21,570 - INFO - Loaded 54 queries from data/qrels.eval.two.tsv
+2024-11-13 23:42:21,620 - INFO - Evaluator initialized successfully
+2024-11-13 23:42:21,620 - INFO - Loaded 1000 queries for dev
+2024-11-13 23:42:21,620 - INFO - Loaded 43 queries for eval_one
+2024-11-13 23:42:21,620 - INFO - Loaded 54 queries for eval_two
+2024-11-13 23:42:21,737 - INFO - Total queries to evaluate: 1097
+2024-11-13 23:42:21,737 - INFO - Processing query 116/1097: 1048795 - 'cost of combigan generic'

@@ -1,11 +1,15 @@
 .vscode
 output/*.txt
 *.bin
-compute_avgdl
+avgdl
 indexer
 parser
-query_processor
+query
 *.tsv
 check_index
 verify_passage
 test
+*.h5
+*.faiss
+*.json
+/hw3_env
