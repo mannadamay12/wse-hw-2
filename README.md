@@ -15,9 +15,18 @@ wse-hw-2/
 │   └── query_processor.cpp
 ├── vector_search/
 │   ├── read_h5.py
-│   ├── compute_avgdl.cpp
-
+│   ├── config.py
+│   ├── build_vector_index.py
+│   ├── vector_search.py
+│   └── evalaute_vector.py
+├── extract_queries.py
+├── evaluate.py
+├── hybrid-approach.ipynb
+└── run_eval.sh
 ```
+</p>1. BM25 searching system is carried out by taking in new queries and testing it agains the evaluation data and for evaluation metrics</p> 
+</p>2. Vector search uses dense retrieval approach using hnsw and faiss library. A graph of similar query terms is created to bulild a semantically sound search system</p> 
+</p>3. Hybrid reranking - loads query & passage embeddings, builds BM25 & HNSW indices. Uses BM25 for initial retrieval, re-ranks top candidates by embedding similarity, combines scores using weighted sum (alpha=0.5).</p> 
 
 Files:
 --------------------------------------------------------------------------------
@@ -52,19 +61,36 @@ To compiler cpp files `g++ -std=c++17 -O2 -o <executable name> src/<cpp file>.cp
     ./compute_avgdl output/doc_lengths.txt 8841823 output/avgdl.txt
     ```
 
-6. query_processor.cpp
+6. query_processor.cpp / new_processor.cpp
     - Processes user queries, retrieves and ranks relevant documents using the BM25 algorithm, and displays the top-10 results with corresponding passages.
 
     ```
     ./query_processor output/final_index.bin output/lexicon.txt output/page_table.txt
     output/passages.bin output/doc_lengths.txt output/avgdl.txt
     ```
+7. query_processor.cpp / new_processor.cpp
+    - Processes user queries, retrieves and ranks relevant documents using the BM25 algorithm, and displays the top-10 results with corresponding passages.
 
-7. logs/*
-    - Covers the logging time for parsing and indexing.
+    ```
+    ./query_processor output/final_index.bin output/lexicon.txt output/page_table.txt
+    output/passages.bin output/doc_lengths.txt output/avgdl.txt
+8. vector_search
+    - Using faiss-cpu library and hnsw index vector search is carried out for the given 1M dataset and respective embeddings using cosine similarity.
 
-8. output/*
+    ```
+    - create a virtualenv
+    - install requirements.txt
+    - then run individual files to test the vector search system
+9. hybrid-approch
+    - A jupyter notebook that containes data class and search system class to simultaneously test out BM25 and vector search sytstems to create a reranking methodology
+    ```
+    - run individual cells and check query generation as well as metric results using trec_eval
+10. logs/*
+    - Covers the logging time for parsing, indexing, vector_search and evaluation metrics of vector search.
+
+11. output/*
     - Covers all the intermdeiate files.
     - Has inverted index, page table and passages in .bin and .text format
+
 
 </p>Expect the result of query processor as top 10 passages with doc ID, BM25 score and passage text in addition to time required to search that particular query and the memory used. Also in terminal select 1 for conjunctive search or 2 for disjunctive search. After this enter your query or simply type "exit" to move out of the processor.</p> 

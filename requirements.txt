@@ -1,0 +1,8 @@
+faiss-cpu
+h5py
+numpy
+pandas
+pytrec_eval
+tqdm
+rank_bm25
+nltk
