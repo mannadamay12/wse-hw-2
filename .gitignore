@@ -12,5 +12,9 @@ test
 *.h5
 *.faiss
 *.json
-/hw3_env
+/hw3
 *.DS_Store
+*.trec
+/Users/ad12/Documents/Develop/wse-hw-2/vector_search/__pycache__
+query_processor
+/data

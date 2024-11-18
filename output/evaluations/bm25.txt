@@ -1,0 +1,51 @@
+Ranking quality (NDCG)
+Overall effectiveness (MAP)
+Early precision (MRR)
+Coverage of relevant documents (Recall)
+--------------------------------------------------
+Evaluating on Dev set (Binary relevance)...
+MAP:        0.3735
+Recall@100: 0.7841
+MRR:        0.3807
+
+Vector_search
+Dev set
+map: 0.5388
+recall_100: 0.8599
+recip_rank: 0.5464
+
+=================================================
+
+Evaluating on TREC-DL 2019...
+NDCG@10:    0.4445
+NDCG@100:   0.5303
+MRR:        0.7238
+
+TREC-DL 2019
+ndcg_cut_100: 0.6539
+ndcg_cut_10: 0.6972
+recip_rank: 0.9535
+
+=================================================
+
+Evaluating on TREC-DL 2020...
+NDCG@10:    0.4845
+NDCG@100:   0.4953
+MRR:        0.8085
+
+TREC-DL 2020
+ndcg_cut_100: 0.6356
+ndcg_cut_10: 0.6635
+recip_rank: 0.9244
+-------------------------------------------------
+
+
+qrels.eval.one / qrels.eval.two -> q_id, _, docID, relevance label
+queries.eval ->  q_id, query_string
+
+qrels.dev -> q_id, docID, 0/1 binary relevance
+queries.dev -> q_id, query_string
+
+data.tsv -> 1M passages
+embeddings.h5 -> docID, embedding on data.tsv
+queries_dev_eval_embeddings.h5 -> q_id, embedding on queries that need to be evaluated

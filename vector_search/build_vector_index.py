@@ -16,20 +16,19 @@ logging.basicConfig(
 )
 
 def main():
-    # Create output directory if it doesn't exist
     os.makedirs('output', exist_ok=True)
     
-    # Step 1: Load passage embeddings
+    # Load passage embeddings
     logging.info("Loading passage embeddings...")
     doc_ids, doc_embeddings = load_embeddings("data/embeddings.h5")
     logging.info(f"Loaded {len(doc_ids)} passage embeddings with shape {doc_embeddings.shape}")
     
-    # Step 2: Initialize and build index
+    # Initialize and build index
     vse = VectorSearchEngine(
         dim=384,
-        m=4,
-        ef_construction=50,
-        ef_search=50
+        m=8,
+        ef_construction=200,
+        ef_search=200
     )
     
     # Build and save index
@@ -37,12 +36,12 @@ def main():
     vse.build_index(doc_embeddings, doc_ids)
     vse.save_index("output/vector_index.faiss")
     
-    # Step 3: Load query embeddings
+    # Load query embeddings
     logging.info("Loading query embeddings...")
     query_ids, query_embeddings = load_embeddings("data/queries_dev_eval_embeddings.h5")
     logging.info(f"Loaded {len(query_ids)} query embeddings")
     
-    # Step 4: Test search with a few queries
+    # Test search with a few queries
     logging.info("Testing search with sample queries...")
     
     # Load query text for display

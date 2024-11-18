@@ -1,4 +1,4 @@
-Submission hw-2 || am14579 || dp4076
+Submission hw-3 || am14579 || dp4076
 ================================================================================
 Directory structure:
 --------------------------------------------------------------------------------
@@ -11,7 +11,12 @@ wse-hw-2/
 │   ├── parser.cpp
 │   ├── compute_avgdl.cpp
 │   ├── indexer.cpp
+│   ├── new_processor.cpp ----> Changed query processor to extract queries and lay out all the passages for BM25 ranking.
 │   └── query_processor.cpp
+├── vector_search/
+│   ├── read_h5.py
+│   ├── compute_avgdl.cpp
+
 ```
 
 Files:

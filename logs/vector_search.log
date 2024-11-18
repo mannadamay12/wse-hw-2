@@ -1,14 +1,14 @@
-2024-11-13 23:16:15,184 - INFO - Loading passage embeddings...
-2024-11-13 23:16:16,548 - INFO - Loaded 1000000 passage embeddings with shape (1000000, 384)
-2024-11-13 23:16:16,549 - INFO - Initializing HNSW with parameters: m=4, ef_construction=50, ef_search=50
-2024-11-13 23:16:16,549 - INFO - Building HNSW index...
-2024-11-13 23:16:46,120 - INFO - Index built in 29.57 seconds. Total vectors: 1000000
-2024-11-13 23:16:46,670 - INFO - Loading query embeddings...
-2024-11-13 23:16:47,320 - INFO - Loaded 202185 query embeddings
-2024-11-13 23:16:47,320 - INFO - Testing search with sample queries...
-2024-11-13 23:16:47,372 - INFO - Search completed in 1.50 ms
-2024-11-13 23:16:47,374 - INFO - Search completed in 0.45 ms
-2024-11-13 23:16:47,375 - INFO - Search completed in 0.63 ms
-2024-11-13 23:16:47,376 - INFO - Search completed in 0.54 ms
-2024-11-13 23:16:47,377 - INFO - Search completed in 0.69 ms
-2024-11-13 23:16:47,377 - INFO - Vector search test completed!
+2024-11-14 18:16:22,699 - INFO - Loading passage embeddings...
+2024-11-14 18:16:25,393 - INFO - Loaded 1000000 passage embeddings with shape (1000000, 384)
+2024-11-14 18:16:25,394 - INFO - Initializing HNSW with parameters: m=8, ef_construction=200, ef_search=200
+2024-11-14 18:16:25,394 - INFO - Building HNSW index...
+2024-11-14 18:21:34,397 - INFO - Index built in 309.00 seconds. Total vectors: 1000000
+2024-11-14 18:21:34,889 - INFO - Loading query embeddings...
+2024-11-14 18:21:35,926 - INFO - Loaded 202185 query embeddings
+2024-11-14 18:21:35,927 - INFO - Testing search with sample queries...
+2024-11-14 18:21:36,013 - INFO - Search completed in 1.80 ms
+2024-11-14 18:21:36,017 - INFO - Search completed in 2.19 ms
+2024-11-14 18:21:36,019 - INFO - Search completed in 1.76 ms
+2024-11-14 18:21:36,021 - INFO - Search completed in 1.37 ms
+2024-11-14 18:21:36,023 - INFO - Search completed in 1.84 ms
+2024-11-14 18:21:36,023 - INFO - Vector search test completed!

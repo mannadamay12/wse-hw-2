@@ -15,12 +15,12 @@ class Config:
     
     # HNSW parameters
     VECTOR_DIM = 384
-    M = 16  # Number of connections per layer
-    EF_CONSTRUCTION = 100
-    EF_SEARCH = 100
+    M = 6  # Number of connections per layer
+    EF_CONSTRUCTION = 150
+    EF_SEARCH = 150
     
     # Hybrid system parameters
-    BM25_CANDIDATES = 100  # Number of candidates to get from BM25
+    BM25_CANDIDATES = 10  # Number of candidates to get from BM25
     FINAL_TOP_K = 10  # Final number of results to return
     
     # Output paths
@@ -30,5 +30,5 @@ class Config:
     # Evaluation parameters
     METRICS = {
         'binary': ['map', 'recall@100', 'mrr@10'],
-        'graded': ['ndcg@10', 'ndcg@100']
+        'graded': ['ndcg@10', 'ndcg@100', 'mrr@10']
     }

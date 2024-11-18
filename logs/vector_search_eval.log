@@ -1,21 +1,14 @@
-2024-11-13 23:22:45,970 - ERROR - Error loading qrels from data/qrels.dev.tsv: not enough values to unpack (expected 4, got 3)
-2024-11-13 23:22:45,973 - INFO - Loaded 43 queries from data/qrels.eval.one.tsv
-2024-11-13 23:22:45,977 - INFO - Loaded 54 queries from data/qrels.eval.two.tsv
-2024-11-13 23:22:46,025 - INFO - Evaluator initialized successfully
-2024-11-13 23:22:46,025 - INFO - Initializing HNSW with parameters: m=4, ef_construction=50, ef_search=50
-2024-11-13 23:22:46,889 - INFO - Loading query embeddings...
-2024-11-13 23:22:47,364 - INFO - Performing batch search...
-2024-11-13 23:32:04,030 - INFO - Loaded 1000 queries from data/qrels.dev.tsv
-2024-11-13 23:32:04,034 - INFO - Loaded 43 queries from data/qrels.eval.one.tsv
-2024-11-13 23:32:04,038 - INFO - Loaded 54 queries from data/qrels.eval.two.tsv
-2024-11-13 23:32:04,099 - INFO - Evaluator initialized successfully
-2024-11-13 23:32:04,099 - INFO - Loaded 1000 queries for dev
-2024-11-13 23:32:04,099 - INFO - Loaded 43 queries for eval_one
-2024-11-13 23:32:04,099 - INFO - Loaded 54 queries for eval_two
-2024-11-13 23:32:04,099 - INFO - Loading passage embeddings...
-2024-11-13 23:32:05,752 - INFO - Initializing HNSW with parameters: m=4, ef_construction=50, ef_search=50
-2024-11-13 23:32:37,390 - INFO - Index built in 31.64 seconds. Total vectors: 1000000
-2024-11-13 23:32:37,391 - INFO - Loading query embeddings...
-2024-11-13 23:32:37,957 - INFO - Processing 1097 queries with relevance judgments
-2024-11-13 23:32:38,140 - INFO - Completed 1097 searches in 0.18 seconds
-2024-11-13 23:32:38,140 - INFO - Average search time: 0.17ms per query
+2024-11-14 18:25:01,483 - INFO - Loaded 1000 queries from data/qrels.dev.tsv
+2024-11-14 18:25:01,489 - INFO - Loaded 43 queries from data/qrels.eval.one.tsv
+2024-11-14 18:25:01,496 - INFO - Loaded 54 queries from data/qrels.eval.two.tsv
+2024-11-14 18:25:01,577 - INFO - Evaluator initialized successfully
+2024-11-14 18:25:01,577 - INFO - Loaded 1000 queries for dev
+2024-11-14 18:25:01,577 - INFO - Loaded 43 queries for eval_one
+2024-11-14 18:25:01,577 - INFO - Loaded 54 queries for eval_two
+2024-11-14 18:25:01,577 - INFO - Loading passage embeddings...
+2024-11-14 18:25:04,155 - INFO - Initializing HNSW with parameters: m=8, ef_construction=200, ef_search=200
+2024-11-14 18:37:49,019 - INFO - Index built in 764.86 seconds. Total vectors: 1000000
+2024-11-14 18:37:49,022 - INFO - Loading query embeddings...
+2024-11-14 18:37:49,901 - INFO - Processing 1097 queries with relevance judgments
+2024-11-14 18:37:50,464 - INFO - Completed 1097 searches in 0.56 seconds
+2024-11-14 18:37:50,464 - INFO - Average search time: 0.51ms per query

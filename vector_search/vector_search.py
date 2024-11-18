@@ -7,9 +7,9 @@ import logging
 class VectorSearchEngine:
     def __init__(self, 
                  dim: int = 384,
-                 m: int = 4,                     # Number of connections per layer
-                 ef_construction: int = 50,      # Size of dynamic candidate list for construction
-                 ef_search: int = 50):           # Size of dynamic candidate list for search
+                 m: int = 6,                     # Number of connections per layer
+                 ef_construction: int = 150,      # Size of dynamic candidate list for construction
+                 ef_search: int = 150):           # Size of dynamic candidate list for search
         self.dim = dim
         self.m = m
         self.ef_construction = ef_construction
@@ -21,7 +21,6 @@ class VectorSearchEngine:
                     f"ef_construction={ef_construction}, ef_search={ef_search}")
 
     def build_index(self, embeddings: np.ndarray, ids: np.ndarray) -> None:
-        """Build HNSW index from embeddings."""
         start_time = time.time()
         self.id_map = {i: str(id_) for i, id_ in enumerate(ids)}
         # Normalize embeddings for dot product similarity
@@ -40,10 +39,7 @@ class VectorSearchEngine:
         logging.info(f"Index built in {build_time:.2f} seconds. "
                     f"Total vectors: {self.index.ntotal}")
         
-    def search(self, 
-              query_embedding: np.ndarray, 
-              k: int = 10) -> Tuple[List[str], List[float]]:
-        """Search for k nearest neighbors."""
+    def search(self, query_embedding: np.ndarray, k: int = 10) -> Tuple[List[str], List[float]]:
         # Normalize query embedding
         faiss.normalize_L2(query_embedding.reshape(1, -1))
         
@@ -59,15 +55,10 @@ class VectorSearchEngine:
         logging.info(f"Search completed in {search_time*1000:.2f} ms")
         return doc_ids, scores
 
-    # Add to existing VectorSearchEngine class:
-
-    def batch_search(self, query_embeddings: np.ndarray, 
-                    query_ids: List[str], k: int = 100) -> List[Tuple[str, List[Tuple[str, float]]]]:
-        """Perform batch search for multiple queries."""
+    def batch_search(self, query_embeddings: np.ndarray, query_ids: List[str], k: int = 100) -> List[Tuple[str, List[Tuple[str, float]]]]:
         if self.index is None:
             raise ValueError("Index not built or loaded")
-        
-        # Normalize query embeddings
+
         query_embeddings = query_embeddings.astype(np.float32)
         faiss.normalize_L2(query_embeddings)
         

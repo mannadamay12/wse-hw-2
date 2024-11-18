@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 
 def explore_h5_structure(file_path):
-    """Explore and print the structure of an H5 file."""
     with h5py.File(file_path, 'r') as f:
         print(f"\nExploring H5 file: {file_path}")
         print("\nDatasets:")
@@ -20,7 +19,6 @@ def explore_h5_structure(file_path):
                 print(f"First few values:\n{dataset[:10]}...")
 
 def load_embeddings(file_path, id_key='id', embedding_key='embedding'):
-    """Load embeddings from H5 file."""
     with h5py.File(file_path, 'r') as f:
         ids = np.array(f[id_key]).astype(str)
         embeddings = np.array(f[embedding_key]).astype(np.float32)  
@@ -29,7 +27,6 @@ def load_embeddings(file_path, id_key='id', embedding_key='embedding'):
     return ids, embeddings
 
 def verify_data_subset(passage_ids_file, original_collection_file):
-    """Verify the 1M subset against original collection."""
     # Read passage IDs
     passage_ids = set(pd.read_csv(passage_ids_file, header=None)[0])
     

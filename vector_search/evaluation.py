@@ -27,7 +27,6 @@ class SearchEvaluator:
             logging.info(f"Loaded {len(qrel_data)} queries for {qrel_type}")
 
     def _load_qrels(self, path: str, binary: bool = False) -> Dict:
-        """Load relevance judgments."""
         qrels = defaultdict(dict)
         try:
             with open(path, 'r') as f:
@@ -53,7 +52,6 @@ class SearchEvaluator:
             return {}
 
     def _load_queries(self) -> Dict[str, str]:
-        """Load query text from both dev and eval files."""
         queries = {}
         files = ['data/queries.dev.tsv', 'data/queries.eval.tsv']
         for file in files:
@@ -68,7 +66,6 @@ class SearchEvaluator:
 
     def calculate_metrics(self, results: List[Tuple[str, List[Tuple[str, float]]]], 
                         qrels_type: str = 'dev') -> Dict[str, float]:
-        """Calculate all relevant metrics for a set of results."""
         if qrels_type not in self.qrels:
             raise ValueError(f"Invalid qrels_type: {qrels_type}")
         
@@ -94,7 +91,6 @@ class SearchEvaluator:
 
     def _calculate_mrr(self, results: List[Tuple[str, List[Tuple[str, float]]]], 
                       qrels: Dict, cutoff: int = 10) -> float:
-        """Calculate Mean Reciprocal Rank at cutoff."""
         mrr = 0.0
         num_queries = 0
         
@@ -110,7 +106,6 @@ class SearchEvaluator:
 
     def _calculate_ndcg(self, results: List[Tuple[str, List[Tuple[str, float]]]], 
                        qrels: Dict, cutoff: int) -> float:
-        """Calculate NDCG at cutoff."""
         def dcg(relevances: List[int]) -> float:
             return sum((2**rel - 1) / np.log2(i + 2) 
                       for i, rel in enumerate(relevances[:cutoff]))
@@ -136,7 +131,6 @@ class SearchEvaluator:
 
     def _calculate_map(self, results: List[Tuple[str, List[Tuple[str, float]]]], 
                       qrels: Dict) -> float:
-        """Calculate Mean Average Precision."""
         ap_sum = 0.0
         num_queries = 0
         
@@ -162,7 +156,6 @@ class SearchEvaluator:
 
     def _calculate_recall(self, results: List[Tuple[str, List[Tuple[str, float]]]], 
                          qrels: Dict, cutoff: int) -> float:
-        """Calculate Recall at cutoff."""
         recall_sum = 0.0
         num_queries = 0
         
@@ -182,7 +175,6 @@ class SearchEvaluator:
 
     def evaluate_system(self, results: List[Tuple[str, List[Tuple[str, float]]]], 
                        system_name: str) -> Dict:
-        """Evaluate results for all three sets of relevance judgments."""
         start_time = time.time()
         
         evaluation = {
@@ -206,7 +198,6 @@ class SearchEvaluator:
         return evaluation
 
     def print_evaluation(self, evaluation: Dict):
-        """Print evaluation results in a formatted way."""
         print(f"\nEvaluation Results for {evaluation['system_name']}")
         print(f"Timestamp: {evaluation['timestamp']}")
         print(f"Number of queries: {evaluation['num_queries']}")

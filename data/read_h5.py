@@ -50,6 +50,7 @@ def verify_data_subset(passage_ids_file, original_collection_file):
 
 if __name__ == "__main__":
     EMBEDDINGS_FILE = "data/embeddings.h5"
+    # QUERIES_EMBEDDINGS = "data/queries_dev_eval_embeddings.h5"
     PASSAGE_IDS_FILE = "data/subset.tsv"
     ORIGINAL_COLLECTION = "data/data.tsv"
     
